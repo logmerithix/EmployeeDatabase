@@ -2,11 +2,15 @@ package commrhardman23.httpsgithub.employeedatabase;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import java.sql.SQLDataException;
 
 public class SearchDatabase extends AppCompatActivity {
 
@@ -34,7 +38,7 @@ public class SearchDatabase extends AppCompatActivity {
      * for it, and displays the result in a TextView.
      * @param vw is the button this method is associated with
      */
-    private void searchDatabase(View vw){
+    public void searchDatabase(View vw){
 
         int numOfArguments = 0;
         int indexOfSearchArray = 0;
@@ -146,31 +150,47 @@ public class SearchDatabase extends AppCompatActivity {
          *    elementsToSearch variables for the String where and String[] whereArgs parameters,
          *    respectively. The query should go inside the try-catch block before the if statement
          *    that follows.
-         *
-         * if(searchCursor.getCount() == 0){
-         *
-         *      txtvwResult.setText("There are no entries with this info...");
-         *
-         * } else {
-         *
-         *      if(searchCursor.moveToFirst()) {
-         *
-         *          for (int i = 0; i < searchCursor.getCount(); i++) {
-         *
-         *              txtvwResult.setText(txtvwResult.getText().toString() +
-         *                  String.format("Name: %-20s Position %-20s\nEmployee Number: %-20d" +
-         *                                  " Wage: -20.2f\n", searchCursor.getString(0),
-         *                                  searchCursor.getString(1), searchCursor.getInt(2),
-         *                                  searchCursor.getDouble(3)));
-         *
-         *              How do we get the next row in the Cursor? Put that here...
-         *
-         *          }
-         *
-         *      }
-         * }
-         *
          */
+          try {
+              SQLiteOpenHelper employeeDataBaseHelper = new EmployeeDatabaseHelper(this, null, null, 0);
+              db = employeeDatabaseHelper.getReadableDatabase();
+
+
+              searchCursor = db.query("EMPLOYEE", new String[] {"NAME","POSITION", "EMPLOYEE_NUM", "WAGE"}, whereToSearch, elementsToSearch, null, null, null);
+
+              if(searchCursor.getCount() == 0){
+
+                  txtvwResult.setText("There are no entries with this info...");
+
+              } else {
+
+                  if(searchCursor.moveToFirst()) {
+
+                      for (int i = 0; i < searchCursor.getCount(); i++) {
+
+
+                          txtvwResult.setText(txtvwResult.getText().toString() +
+                                  String.format("Name: %-35s Position: %-20s\nEmployee Number: %-20d" +
+                                                  " Wage: %.2f\n", searchCursor.getString(0),
+                                          searchCursor.getString(1), searchCursor.getInt(2),
+                                          searchCursor.getDouble(3)));
+
+                          searchCursor.moveToNext();
+
+                      }
+                  }
+
+              }
+
+              searchCursor.close();
+
+              db.close ();
+
+          } catch (SQLiteException e){
+
+          }
+
+
 
     }
 
@@ -179,7 +199,7 @@ public class SearchDatabase extends AppCompatActivity {
      * database that contain the information provided
      * @param vw is the button the method is associated with
      */
-    private void deleteEntry(View vw){
+    public void deleteEntry(View vw) {
 
         int numOfArguments = 0;
         int indexOfSearchArray = 0;
@@ -193,7 +213,8 @@ public class SearchDatabase extends AppCompatActivity {
         SQLiteDatabase db;
         int numRowsDeleted;
 
-        if(edtxtName.getText().length() != 0){
+
+        if (edtxtName.getText().length() != 0) {
 
             numOfArguments++;
             name = edtxtName.getText().toString();
@@ -201,12 +222,12 @@ public class SearchDatabase extends AppCompatActivity {
 
         }
 
-        if(edtxtPosition.getText().length() != 0){
+        if (edtxtPosition.getText().length() != 0) {
 
             numOfArguments++;
             position = edtxtPosition.getText().toString();
 
-            if(whereToDelete.equals("")) {
+            if (whereToDelete.equals("")) {
                 whereToDelete += "POSITION = ?";
             } else {
                 whereToDelete += " AND POSITION = ?";
@@ -214,12 +235,12 @@ public class SearchDatabase extends AppCompatActivity {
 
         }
 
-        if(edtxtEmployeeNum.getText().length() != 0){
+        if (edtxtEmployeeNum.getText().length() != 0) {
 
             numOfArguments++;
             employeeNum = edtxtEmployeeNum.getText().toString();
 
-            if(whereToDelete.equals("")) {
+            if (whereToDelete.equals("")) {
                 whereToDelete += "EMPLOYEE_NUM = ?";
             } else {
                 whereToDelete += " AND EMPLOYEE_NUM = ?";
@@ -227,12 +248,12 @@ public class SearchDatabase extends AppCompatActivity {
 
         }
 
-        if(edtxtWage.getText().length() != 0){
+        if (edtxtWage.getText().length() != 0) {
 
             numOfArguments++;
             wage = edtxtWage.getText().toString();
 
-            if(whereToDelete.equals("")) {
+            if (whereToDelete.equals("")) {
                 whereToDelete += "WAGE = ?";
             } else {
                 whereToDelete += " AND WAGE = ?";
@@ -240,7 +261,7 @@ public class SearchDatabase extends AppCompatActivity {
 
         }
 
-        if(numOfArguments == 0){
+        if (numOfArguments == 0) {
 
             elementsToDelete = null;
             whereToDelete = null;
@@ -277,8 +298,8 @@ public class SearchDatabase extends AppCompatActivity {
 
             }
 
-        }
 
+        }
         /**
          * 1. Get a Writable reference to the database using the db variable (Remember the
          *    try-catch block. The next two steps should go in your try block)
@@ -288,6 +309,20 @@ public class SearchDatabase extends AppCompatActivity {
          * 3. Display the number of rows deleted
          */
 
+        try {
+            db = employeeDatabaseHelper.getWritableDatabase();
+
+            numRowsDeleted = employeeDatabaseHelper.deleteElement(db, whereToDelete, elementsToDelete);
+            txtvwResult.setText("The number of rows deleted are " + Integer.toString(numRowsDeleted));
+
+            db.close();
+
+        } catch (SQLiteException e){
+            txtvwResult.setText("The database cannot be found.");
+        }
+
+
     }
+
 
 }
